@@ -74,7 +74,25 @@ CREATE TABLE T_CLY_HISTORICO_CLINICO (
     CONSTRAINT pk_cly_historico_clinico PRIMARY KEY (id_historico),
     CONSTRAINT fk_cly_historico_pet FOREIGN KEY (id_pet)
         REFERENCES T_CLY_PET (id_pet),
+    
+    CONSTRAINT ck_cly_pet_sexo CHECK (
+    sexo IN (
+        'MACHO',
+        'FEMEA',
+        'NAO_INFORMADO'
+    )
+)
 
+
+
+ CONSTRAINT ck_cly_pet_sexo CHECK (
+    sexo IN (
+        'M',
+        'F',
+        'N'
+    )
+)
+    
     CONSTRAINT ck_cly_historico_tipo CHECK (
         tipo_registro IN (
             'VACINA',
