@@ -75,16 +75,7 @@ CREATE TABLE T_CLY_HISTORICO_CLINICO (
     CONSTRAINT fk_cly_historico_pet FOREIGN KEY (id_pet)
         REFERENCES T_CLY_PET (id_pet),
     
-    CONSTRAINT ck_cly_pet_sexo CHECK (
-    sexo IN (
-        'MACHO',
-        'FEMEA',
-        'NAO_INFORMADO'
-    )
-)
-
-
-
+    
  CONSTRAINT ck_cly_pet_sexo CHECK (
     sexo IN (
         'M',
