@@ -155,11 +155,11 @@ END;
 -- ID_PORTE: 1=PEQUENO 2=MEDIO 3=GRANDE
 ------------------------------------------------------------
 BEGIN
-    PRC_CARGA_PET(1, 'Rex',     1, 1, 3, TO_DATE('10/05/2021','DD/MM/YYYY'), TO_NUMBER('25,0'),  'M', 'S');
-    PRC_CARGA_PET(2, 'Mel',     2, 6, 1, TO_DATE('03/08/2020','DD/MM/YYYY'), TO_NUMBER('4,5'),   'F', 'S');
-    PRC_CARGA_PET(3, 'Thor',    1, 2, 3, TO_DATE('15/01/2019','DD/MM/YYYY'), TO_NUMBER('30,0'),  'M', 'N');
-    PRC_CARGA_PET(4, 'Luna',    1, 5, 1, TO_DATE('22/11/2022','DD/MM/YYYY'), TO_NUMBER('5,0'),   'F', 'S');
-    PRC_CARGA_PET(5, 'Bolinha', 1, 3, 2, TO_DATE('07/04/2018','DD/MM/YYYY'), TO_NUMBER('12,0'),  'M', 'N');
+    PRC_CARGA_PET(1, 'Rex',     1, 1, 3, TO_DATE('10/05/2021','DD/MM/YYYY'), 25.0, 'M', 'S');
+    PRC_CARGA_PET(2, 'Mel',     2, 6, 1, TO_DATE('03/08/2020','DD/MM/YYYY'), 4.5,  'F', 'S');
+    PRC_CARGA_PET(3, 'Thor',    1, 2, 3, TO_DATE('15/01/2019','DD/MM/YYYY'), 30.0, 'M', 'N');
+    PRC_CARGA_PET(4, 'Luna',    1, 5, 1, TO_DATE('22/11/2022','DD/MM/YYYY'), 5.0,  'F', 'S');
+    PRC_CARGA_PET(5, 'Bolinha', 1, 3, 2, TO_DATE('07/04/2018','DD/MM/YYYY'), 12.0, 'M', 'N');
 END;
 /
 
@@ -168,11 +168,11 @@ END;
 -- ID_PET | INTERVALO | FREQUENCIA | ATIVIDADE | PRESSAO | STATUS
 ------------------------------------------------------------
 BEGIN
-    PRC_CARGA_DISPOSITIVO(1,  5,  80, TO_NUMBER('3,5'),  TO_NUMBER('12,5'), 'ATIVO');
-    PRC_CARGA_DISPOSITIVO(2, 10, 160, TO_NUMBER('1,2'),  TO_NUMBER('9,8'),  'ATIVO');
-    PRC_CARGA_DISPOSITIVO(3,  5,  72, TO_NUMBER('5,0'),  TO_NUMBER('11,0'), 'ATIVO');
-    PRC_CARGA_DISPOSITIVO(4, 15, 140, TO_NUMBER('2,8'),  TO_NUMBER('10,5'), 'INATIVO');
-    PRC_CARGA_DISPOSITIVO(5,  5,  95, TO_NUMBER('4,1'),  TO_NUMBER('13,0'), 'MANUTENCAO');
+    PRC_CARGA_DISPOSITIVO(1,  5,  80, 3.5, 12.5, 'ATIVO');
+    PRC_CARGA_DISPOSITIVO(2, 10, 160, 1.2, 9.8,  'ATIVO');
+    PRC_CARGA_DISPOSITIVO(3,  5,  72, 5.0, 11.0, 'ATIVO');
+    PRC_CARGA_DISPOSITIVO(4, 15, 140, 2.8, 10.5, 'INATIVO');
+    PRC_CARGA_DISPOSITIVO(5,  5,  95, 4.1, 13.0, 'MANUTENCAO');
 END;
 /
 
@@ -181,11 +181,11 @@ END;
 -- ID_DISPOSITIVO | DT_LEITURA | FREQUENCIA | ATIVIDADE | PRESSAO
 ------------------------------------------------------------
 BEGIN
-    PRC_CARGA_LEITURA_IOT(1, SYSDATE - 1,  80, TO_NUMBER('3,5'),  TO_NUMBER('12,5'));
-    PRC_CARGA_LEITURA_IOT(1, SYSDATE,      85, TO_NUMBER('4,0'),  TO_NUMBER('12,8'));
-    PRC_CARGA_LEITURA_IOT(2, SYSDATE - 2, 160, TO_NUMBER('1,2'),  TO_NUMBER('9,8'));
-    PRC_CARGA_LEITURA_IOT(3, SYSDATE - 1,  72, TO_NUMBER('5,0'),  TO_NUMBER('11,0'));
-    PRC_CARGA_LEITURA_IOT(3, SYSDATE,      75, TO_NUMBER('5,5'),  TO_NUMBER('11,2'));
+    PRC_CARGA_LEITURA_IOT(1, SYSDATE - 1,  80, 3.5, 12.5);
+    PRC_CARGA_LEITURA_IOT(1, SYSDATE,      85, 4.0, 12.8);
+    PRC_CARGA_LEITURA_IOT(2, SYSDATE - 2, 160, 1.2, 9.8);
+    PRC_CARGA_LEITURA_IOT(3, SYSDATE - 1,  72, 5.0, 11.0);
+    PRC_CARGA_LEITURA_IOT(3, SYSDATE,      75, 5.5, 11.2);
 END;
 /
 
