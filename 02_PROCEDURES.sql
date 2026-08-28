@@ -673,3 +673,8 @@ EXCEPTION
         DBMS_OUTPUT.PUT_LINE('Erro [' || v_codigo || ']: ' || v_erro);
 END;
 /
+
+BEGIN
+  DBMS_OUTPUT.PUT_LINE('MARCADOR: ' || TO_CHAR(SYSTIMESTAMP, 'HH24:MI:SS.FF3'));
+END;
+/

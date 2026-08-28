@@ -155,11 +155,11 @@ END;
 -- ID_PORTE: 1=PEQUENO 2=MEDIO 3=GRANDE
 ------------------------------------------------------------
 BEGIN
-    PRC_CARGA_PET(1, 'Rex',     1, 1, 3, TO_DATE('10/05/2021','DD/MM/YYYY'), 25.0, 'M', 'S');
-    PRC_CARGA_PET(2, 'Mel',     2, 6, 1, TO_DATE('03/08/2020','DD/MM/YYYY'), 4.5,  'F', 'S');
-    PRC_CARGA_PET(3, 'Thor',    1, 2, 3, TO_DATE('15/01/2019','DD/MM/YYYY'), 30.0, 'M', 'N');
-    PRC_CARGA_PET(4, 'Luna',    1, 5, 1, TO_DATE('22/11/2022','DD/MM/YYYY'), 5.0,  'F', 'S');
-    PRC_CARGA_PET(5, 'Bolinha', 1, 3, 2, TO_DATE('07/04/2018','DD/MM/YYYY'), 12.0, 'M', 'N');
+    PRC_CARGA_PET(1, 'Rex',     1, 1, 3, TO_DATE('10/05/2021','DD/MM/YYYY'), 25, 'M', 'S');
+    PRC_CARGA_PET(2, 'Mel',     2, 6, 1, TO_DATE('03/08/2020','DD/MM/YYYY'), 4,  'F', 'S');
+    PRC_CARGA_PET(3, 'Thor',    1, 2, 3, TO_DATE('15/01/2019','DD/MM/YYYY'), 30, 'M', 'N');
+    PRC_CARGA_PET(4, 'Luna',    1, 5, 1, TO_DATE('22/11/2022','DD/MM/YYYY'), 5,  'F', 'S');
+    PRC_CARGA_PET(5, 'Bolinha', 1, 3, 2, TO_DATE('07/04/2018','DD/MM/YYYY'), 12, 'M', 'N');
 END;
 /
 
@@ -168,11 +168,11 @@ END;
 -- ID_PET | INTERVALO | FREQUENCIA | ATIVIDADE | PRESSAO | STATUS
 ------------------------------------------------------------
 BEGIN
-    PRC_CARGA_DISPOSITIVO(1,  5,  80, 3.5, 12.5, 'ATIVO');
-    PRC_CARGA_DISPOSITIVO(2, 10, 160, 1.2, 9.8,  'ATIVO');
-    PRC_CARGA_DISPOSITIVO(3,  5,  72, 5.0, 11.0, 'ATIVO');
-    PRC_CARGA_DISPOSITIVO(4, 15, 140, 2.8, 10.5, 'INATIVO');
-    PRC_CARGA_DISPOSITIVO(5,  5,  95, 4.1, 13.0, 'MANUTENCAO');
+    PRC_CARGA_DISPOSITIVO(1,  5,  80, 3, 12, 'ATIVO');
+    PRC_CARGA_DISPOSITIVO(2, 10, 160, 1, 9,  'ATIVO');
+    PRC_CARGA_DISPOSITIVO(3,  5,  72, 5, 11, 'ATIVO');
+    PRC_CARGA_DISPOSITIVO(4, 15, 140, 2, 10, 'INATIVO');
+    PRC_CARGA_DISPOSITIVO(5,  5,  95, 4, 13, 'MANUTENCAO');
 END;
 /
 
@@ -181,11 +181,11 @@ END;
 -- ID_DISPOSITIVO | DT_LEITURA | FREQUENCIA | ATIVIDADE | PRESSAO
 ------------------------------------------------------------
 BEGIN
-    PRC_CARGA_LEITURA_IOT(1, SYSDATE - 1,  80, 3.5, 12.5);
-    PRC_CARGA_LEITURA_IOT(1, SYSDATE,      85, 4.0, 12.8);
-    PRC_CARGA_LEITURA_IOT(2, SYSDATE - 2, 160, 1.2, 9.8);
-    PRC_CARGA_LEITURA_IOT(3, SYSDATE - 1,  72, 5.0, 11.0);
-    PRC_CARGA_LEITURA_IOT(3, SYSDATE,      75, 5.5, 11.2);
+    PRC_CARGA_LEITURA_IOT(1, SYSDATE - 1,  80, 3, 12);
+    PRC_CARGA_LEITURA_IOT(1, SYSDATE,      85, 4, 12);
+    PRC_CARGA_LEITURA_IOT(2, SYSDATE - 2, 160, 1, 9);
+    PRC_CARGA_LEITURA_IOT(3, SYSDATE - 1,  72, 5, 11);
+    PRC_CARGA_LEITURA_IOT(3, SYSDATE,      75, 5, 11);
 END;
 /
 
