@@ -595,7 +595,10 @@ END;
 ------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE PRC_CARGA_PROFISSIONAL (
     p_id_clinica          IN NUMBER,
-    p_nome_profissional   IN VARCHAR2
+    p_nome_profissional   IN VARCHAR2,
+    p_email               IN VARCHAR2,
+    p_senha               IN VARCHAR2,
+    p_crmv                IN VARCHAR2
 )
 IS
     v_clinica NUMBER;
@@ -608,10 +611,14 @@ BEGIN
             RAISE_APPLICATION_ERROR(-20080, 'Clinica nao encontrada');
         END IF;
     END IF;
-    INSERT INTO T_CLY_PROFISSIONAL (ID_CLINICA, NOME_PROFISSIONAL)
-    VALUES (p_id_clinica, p_nome_profissional);
+    INSERT INTO T_CLY_PROFISSIONAL (ID_CLINICA, NOME_PROFISSIONAL, EMAIL, SENHA, CRMV)
+    VALUES (p_id_clinica, p_nome_profissional, p_email, p_senha, p_crmv);
     DBMS_OUTPUT.PUT_LINE('Profissional cadastrado: ' || p_nome_profissional);
 EXCEPTION
+    WHEN DUP_VAL_ON_INDEX THEN
+        INSERT INTO T_CLY_LOG_ERRO (NOME_PROCEDURE, CODIGO_ERRO, MENSAGEM_ERRO, DATA_ERRO, USUARIO_BANCO)
+        VALUES ('PRC_CARGA_PROFISSIONAL', 1, 'Email ou CRMV ja cadastrado', SYSDATE, USER);
+        DBMS_OUTPUT.PUT_LINE('Erro: Email ou CRMV ja existente');
     WHEN VALUE_ERROR THEN
         INSERT INTO T_CLY_LOG_ERRO (NOME_PROCEDURE, CODIGO_ERRO, MENSAGEM_ERRO, DATA_ERRO, USUARIO_BANCO)
         VALUES ('PRC_CARGA_PROFISSIONAL', 2, 'Erro de valor informado', SYSDATE, USER);
@@ -671,10 +678,5 @@ EXCEPTION
         INSERT INTO T_CLY_LOG_ERRO (NOME_PROCEDURE, CODIGO_ERRO, MENSAGEM_ERRO, DATA_ERRO, USUARIO_BANCO)
         VALUES ('PRC_CARGA_HISTORICO', v_codigo, v_erro, SYSDATE, USER);
         DBMS_OUTPUT.PUT_LINE('Erro [' || v_codigo || ']: ' || v_erro);
-END;
-/
-
-BEGIN
-  DBMS_OUTPUT.PUT_LINE('MARCADOR: ' || TO_CHAR(SYSTIMESTAMP, 'HH24:MI:SS.FF3'));
 END;
 /

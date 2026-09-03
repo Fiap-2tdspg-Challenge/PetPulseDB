@@ -104,9 +104,9 @@ END;
 -- ID_CLINICA: 1=VetCare | 2=PetSaude
 ------------------------------------------------------------
 BEGIN
-    PRC_CARGA_PROFISSIONAL(1, 'Dr. Carlos Andrade');
-    PRC_CARGA_PROFISSIONAL(1, 'Dra. Fernanda Lima');
-    PRC_CARGA_PROFISSIONAL(2, 'Dr. Roberto Souza');
+    PRC_CARGA_PROFISSIONAL(1, 'Dr. Carlos Andrade',  'carlos.andrade@vetcare.com',  'vet123',  'CRMV-SP-12345');
+    PRC_CARGA_PROFISSIONAL(1, 'Dra. Fernanda Lima',  'fernanda.lima@vetcare.com',   'vet456',  'CRMV-SP-23456');
+    PRC_CARGA_PROFISSIONAL(2, 'Dr. Roberto Souza',   'roberto.souza@petsaude.com',  'vet789',  'CRMV-RJ-34567');
 END;
 /
 
