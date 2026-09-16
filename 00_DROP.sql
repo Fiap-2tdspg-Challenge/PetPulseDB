@@ -25,6 +25,26 @@ DROP PROCEDURE PRC_CARGA_TIPO_ENDERECO;
 DROP PROCEDURE PRC_CARGA_CIDADE;
 DROP PROCEDURE PRC_CARGA_ESTADO;
 
+------------------------------------------------------------
+-- DROP DOS OBJETOS DA SPRINT 3 (05_SPRINT3_BD.sql)
+------------------------------------------------------------
+------------------------------------------------------------
+-- DROP DOS PACOTES (06_PACKAGES.sql - Sprint 4)
+-- Se o schema ainda estiver na versao pre-empacotamento (so
+-- Sprint 3), estes DROPs falham silenciosamente (ORA-04043) e
+-- o SQL*Plus segue para a proxima linha sem interromper o script.
+------------------------------------------------------------
+DROP PACKAGE PKG_AUDITORIA;
+DROP PACKAGE PKG_RELATORIOS;
+DROP PACKAGE PKG_CARGA;
+
+DROP TRIGGER TRG_AUDITORIA_PET;
+DROP TABLE T_CLY_AUDITORIA_PET CASCADE CONSTRAINTS;
+DROP PROCEDURE PRC_REL_LEITURAS_SUBTOTAL;
+DROP PROCEDURE PRC_REL_PETS_JSON;
+DROP FUNCTION FUNC_VALIDA_PESO_PORTE;
+DROP FUNCTION FUNC_PET_TO_JSON;
+
 
 ------------------------------------------------------------
 -- DROP DAS TABELAS
