@@ -757,20 +757,22 @@ CREATE OR REPLACE PACKAGE PKG_RELATORIOS IS
 
     FUNCTION FUNC_PET_TO_JSON (
         p_id_pet   IN NUMBER,
-    p_nome_pet IN VARCHAR2,
-    p_tutor    IN VARCHAR2,
-    p_especie  IN VARCHAR2,
-    p_raca     IN VARCHAR2,
-    p_porte    IN VARCHAR2,
-    p_peso     IN NUMBER,
-    p_sexo     IN VARCHAR2
+        p_nome_pet IN VARCHAR2,
+        p_tutor    IN VARCHAR2,
+        p_especie  IN VARCHAR2,
+        p_raca     IN VARCHAR2,
+        p_porte    IN VARCHAR2,
+        p_peso     IN NUMBER,
+        p_sexo     IN VARCHAR2
     ) RETURN VARCHAR2;
+
     FUNCTION FUNC_VALIDA_PESO_PORTE (
         p_porte IN VARCHAR2,
-    p_peso  IN NUMBER
+        p_peso  IN NUMBER
     ) RETURN VARCHAR2;
+
     PROCEDURE PRC_REL_PETS_JSON;
-    PROCEDURE PRC_REL_LEITURAS_SUBTOTAL;
+    PROCEDURE PRC_REL_ALERTAS_SUBTOTAL;
 
 END PKG_RELATORIOS;
 /
@@ -802,12 +804,13 @@ BEGIN
     v_nome_esc  := REPLACE(NVL(p_nome_pet, ''), '"', '\"');
     v_tutor_esc := REPLACE(NVL(p_tutor, ''), '"', '\"');
 
-    -- Peso agora é sempre inteiro no projeto (sem casas decimais),
-    -- entao basta um TO_CHAR simples, sem depender de mascara de formato.
+    -- O peso vem de NUMBER(6,2) e pode ter casas decimais (a API grava
+    -- valores como 0,3). O ponto e fixado como separador para o JSON ser
+    -- valido independente do NLS da sessao.
     IF p_peso IS NULL THEN
         v_peso_str := 'null';
     ELSE
-        v_peso_str := TO_CHAR(p_peso);
+        v_peso_str := TO_CHAR(p_peso, 'FM9999990D00', 'NLS_NUMERIC_CHARACTERS=''.,''');
     END IF;
 
     v_json := '{'
@@ -888,7 +891,7 @@ IS
         ORDER BY p.ID_PET;
 
     v_json_item  VARCHAR2(2000);
-    v_json_array VARCHAR2(4000) := '[';
+    v_json_array VARCHAR2(32767) := '[';
     v_primeiro   BOOLEAN := TRUE;
     v_qtd        PLS_INTEGER := 0;
     v_erro       VARCHAR2(4000);
@@ -939,74 +942,89 @@ EXCEPTION
         DBMS_OUTPUT.PUT_LINE('Erro [' || v_codigo || ']: ' || v_erro);
 END PRC_REL_PETS_JSON;
 
-PROCEDURE PRC_REL_LEITURAS_SUBTOTAL
+PROCEDURE PRC_REL_ALERTAS_SUBTOTAL
 IS
-    CURSOR c_leituras IS
-        SELECT ID_DISPOSITIVO, TRUNC(DT_LEITURA) AS DIA, FREQUENCIA_CARDIACA
-        FROM T_CLY_LEITURA_IOT
-        ORDER BY ID_DISPOSITIVO, TRUNC(DT_LEITURA);
+    CURSOR c_alertas IS
+        SELECT NVL(NIVEL_RISCO, 'SEM RISCO') AS RISCO, STATUS
+        FROM T_CLY_ALERTA_INTELIGENTE
+        ORDER BY CASE NIVEL_RISCO WHEN 'ALTO'  THEN 1
+                                  WHEN 'MEDIO' THEN 2
+                                  WHEN 'BAIXO' THEN 3
+                                  ELSE 4 END,
+                 STATUS;
 
-    v_disp_atual  T_CLY_LEITURA_IOT.ID_DISPOSITIVO%TYPE;
-    v_disp_ant    T_CLY_LEITURA_IOT.ID_DISPOSITIVO%TYPE := NULL;
+    v_risco_ant   VARCHAR2(20) := NULL;
+    v_status_ant  VARCHAR2(20) := NULL;
+    v_qtd_combo   NUMBER := 0;
     v_subtotal    NUMBER := 0;
     v_total_geral NUMBER := 0;
     v_qtd_linhas  PLS_INTEGER := 0;
     v_erro        VARCHAR2(4000);
     v_codigo      NUMBER;
+
+    -- Imprime a linha da combinacao (risco, status) que acabou de fechar
+    PROCEDURE p_imprime_combo IS
+    BEGIN
+        DBMS_OUTPUT.PUT_LINE(RPAD(v_risco_ant, 12) || RPAD(v_status_ant, 13) || TO_CHAR(v_qtd_combo));
+    END p_imprime_combo;
 BEGIN
-    DBMS_OUTPUT.PUT_LINE('=== PROCEDIMENTO 2: LEITURAS IOT COM SUBTOTAL POR DISPOSITIVO ===');
-    DBMS_OUTPUT.PUT_LINE(RPAD('Dispositivo',13) || RPAD('Dia',14) || 'BPM');
-    DBMS_OUTPUT.PUT_LINE(RPAD('-',12,'-') || ' ' || RPAD('-',12,'-') || ' ' || RPAD('-',5,'-'));
+    DBMS_OUTPUT.PUT_LINE('=== PROCEDIMENTO 2: ALERTAS POR NIVEL DE RISCO E STATUS ===');
+    DBMS_OUTPUT.PUT_LINE(RPAD('Nivel Risco', 12) || RPAD('Status', 13) || 'Qtd Alertas');
+    DBMS_OUTPUT.PUT_LINE(RPAD('-', 11, '-') || ' ' || RPAD('-', 12, '-') || ' ' || RPAD('-', 11, '-'));
 
-    FOR r IN c_leituras LOOP
+    FOR r IN c_alertas LOOP
         v_qtd_linhas := v_qtd_linhas + 1;
-        v_disp_atual := r.ID_DISPOSITIVO;
 
-        -- Ao trocar de dispositivo, fecha o subtotal do grupo anterior
-        IF v_disp_ant IS NOT NULL AND v_disp_atual <> v_disp_ant THEN
-            DBMS_OUTPUT.PUT_LINE(RPAD(' ',13) || RPAD('Sub Total',14) || TO_CHAR(v_subtotal));
-            v_subtotal := 0;
+        IF v_qtd_linhas > 1 THEN
+            IF r.RISCO <> v_risco_ant THEN
+                -- Mudou o nivel de risco: fecha a combinacao e o subtotal do grupo
+                p_imprime_combo;
+                DBMS_OUTPUT.PUT_LINE(RPAD(' ', 12) || RPAD('Sub Total', 13) || TO_CHAR(v_subtotal));
+                v_qtd_combo := 0;
+                v_subtotal  := 0;
+            ELSIF r.STATUS <> v_status_ant THEN
+                -- Mesmo risco, mudou o status: fecha so a combinacao
+                p_imprime_combo;
+                v_qtd_combo := 0;
+            END IF;
         END IF;
 
-        DBMS_OUTPUT.PUT_LINE(
-            RPAD(TO_CHAR(r.ID_DISPOSITIVO),13) ||
-            RPAD(TO_CHAR(r.DIA,'DD/MM/YYYY'),14) ||
-            TO_CHAR(r.FREQUENCIA_CARDIACA)
-        );
-
-        v_subtotal    := v_subtotal + NVL(r.FREQUENCIA_CARDIACA, 0);
-        v_total_geral := v_total_geral + NVL(r.FREQUENCIA_CARDIACA, 0);
-        v_disp_ant    := v_disp_atual;
+        v_qtd_combo   := v_qtd_combo + 1;
+        v_subtotal    := v_subtotal + 1;
+        v_total_geral := v_total_geral + 1;
+        v_risco_ant   := r.RISCO;
+        v_status_ant  := r.STATUS;
     END LOOP;
 
     IF v_qtd_linhas = 0 THEN
         RAISE NO_DATA_FOUND;
     END IF;
 
-    -- Fecha o subtotal do ultimo grupo e imprime o total geral
-    DBMS_OUTPUT.PUT_LINE(RPAD(' ',13) || RPAD('Sub Total',14) || TO_CHAR(v_subtotal));
-    DBMS_OUTPUT.PUT_LINE(RPAD(' ',13) || RPAD('Total Geral',14) || TO_CHAR(v_total_geral));
+    -- Fecha a ultima combinacao, o ultimo subtotal e o total geral
+    p_imprime_combo;
+    DBMS_OUTPUT.PUT_LINE(RPAD(' ', 12) || RPAD('Sub Total', 13) || TO_CHAR(v_subtotal));
+    DBMS_OUTPUT.PUT_LINE(RPAD(' ', 12) || RPAD('Total Geral', 13) || TO_CHAR(v_total_geral));
 
 EXCEPTION
     WHEN NO_DATA_FOUND THEN
         INSERT INTO T_CLY_LOG_ERRO (NOME_PROCEDURE, CODIGO_ERRO, MENSAGEM_ERRO, DATA_ERRO, USUARIO_BANCO)
-        VALUES ('PRC_REL_LEITURAS_SUBTOTAL', 101, 'Nenhuma leitura IoT encontrada', SYSDATE, USER);
-        DBMS_OUTPUT.PUT_LINE('Erro: nenhuma leitura encontrada');
+        VALUES ('PRC_REL_ALERTAS_SUBTOTAL', 101, 'Nenhum alerta encontrado', SYSDATE, USER);
+        DBMS_OUTPUT.PUT_LINE('Erro: nenhum alerta encontrado');
     WHEN VALUE_ERROR THEN
         INSERT INTO T_CLY_LOG_ERRO (NOME_PROCEDURE, CODIGO_ERRO, MENSAGEM_ERRO, DATA_ERRO, USUARIO_BANCO)
-        VALUES ('PRC_REL_LEITURAS_SUBTOTAL', 2, 'Erro de valor no calculo de subtotal', SYSDATE, USER);
+        VALUES ('PRC_REL_ALERTAS_SUBTOTAL', 2, 'Erro de valor no calculo de subtotal', SYSDATE, USER);
         DBMS_OUTPUT.PUT_LINE('Erro de valor');
     WHEN ZERO_DIVIDE THEN
         INSERT INTO T_CLY_LOG_ERRO (NOME_PROCEDURE, CODIGO_ERRO, MENSAGEM_ERRO, DATA_ERRO, USUARIO_BANCO)
-        VALUES ('PRC_REL_LEITURAS_SUBTOTAL', 3, 'Divisao por zero', SYSDATE, USER);
+        VALUES ('PRC_REL_ALERTAS_SUBTOTAL', 3, 'Divisao por zero', SYSDATE, USER);
         DBMS_OUTPUT.PUT_LINE('Erro de divisao por zero');
     WHEN OTHERS THEN
         v_codigo := SQLCODE;
         v_erro   := SQLERRM;
         INSERT INTO T_CLY_LOG_ERRO (NOME_PROCEDURE, CODIGO_ERRO, MENSAGEM_ERRO, DATA_ERRO, USUARIO_BANCO)
-        VALUES ('PRC_REL_LEITURAS_SUBTOTAL', v_codigo, v_erro, SYSDATE, USER);
+        VALUES ('PRC_REL_ALERTAS_SUBTOTAL', v_codigo, v_erro, SYSDATE, USER);
         DBMS_OUTPUT.PUT_LINE('Erro [' || v_codigo || ']: ' || v_erro);
-END PRC_REL_LEITURAS_SUBTOTAL;
+END PRC_REL_ALERTAS_SUBTOTAL;
 
 END PKG_RELATORIOS;
 /
@@ -1039,6 +1057,8 @@ CREATE OR REPLACE PACKAGE BODY PKG_AUDITORIA IS
         p_valores_novos      IN VARCHAR2
     )
     IS
+        v_codigo NUMBER;
+        v_erro   VARCHAR2(4000);
     BEGIN
         INSERT INTO T_CLY_AUDITORIA_PET (
             NOME_USUARIO, TIPO_OPERACAO, ID_PET_REF,
@@ -1052,12 +1072,17 @@ CREATE OR REPLACE PACKAGE BODY PKG_AUDITORIA IS
         WHEN OTHERS THEN
             -- A auditoria nunca deve impedir a operacao original em
             -- T_CLY_PET; registra o problema no log central e segue.
+            -- SQLCODE/SQLERRM nao podem ser usados direto dentro de um comando
+            -- SQL (ORA-00984): primeiro copia para variaveis locais.
+            v_codigo := SQLCODE;
+            v_erro   := SQLERRM;
             INSERT INTO T_CLY_LOG_ERRO (NOME_PROCEDURE, CODIGO_ERRO, MENSAGEM_ERRO, DATA_ERRO, USUARIO_BANCO)
-            VALUES ('PKG_AUDITORIA.REGISTRAR_AUDITORIA_PET', SQLCODE, SQLERRM, SYSDATE, USER);
+            VALUES ('PKG_AUDITORIA.REGISTRAR_AUDITORIA_PET', v_codigo, v_erro, SYSDATE, USER);
     END REGISTRAR_AUDITORIA_PET;
 
 END PKG_AUDITORIA;
 /
+
 
 ------------------------------------------------------------
 -- TRIGGER TRG_AUDITORIA_PET (recriada)
@@ -1120,7 +1145,7 @@ DROP PROCEDURE PRC_CARGA_HISTORICO;
 DROP FUNCTION FUNC_PET_TO_JSON;
 DROP FUNCTION FUNC_VALIDA_PESO_PORTE;
 DROP PROCEDURE PRC_REL_PETS_JSON;
-DROP PROCEDURE PRC_REL_LEITURAS_SUBTOTAL;
+DROP PROCEDURE PRC_REL_ALERTAS_SUBTOTAL;
 
 ------------------------------------------------------------
 -- DEMONSTRACAO / TESTES DOS PACOTES
@@ -1138,23 +1163,46 @@ END;
 -- Teste 2: gerar o relatorio de pets em JSON via PKG_RELATORIOS
 EXEC PKG_RELATORIOS.PRC_REL_PETS_JSON;
 
--- Teste 3: gerar o relatorio de subtotal de leituras via PKG_RELATORIOS
-EXEC PKG_RELATORIOS.PRC_REL_LEITURAS_SUBTOTAL;
+-- Teste 3: relatorio de alertas (subtotal por risco e status)
+EXEC PKG_RELATORIOS.PRC_REL_ALERTAS_SUBTOTAL;
 
--- Teste 4: validar peso x porte via PKG_RELATORIOS (chamada direta da funcao)
+-- Teste 4: validar peso x porte (chamada direta da funcao)
 BEGIN
     DBMS_OUTPUT.PUT_LINE('Validacao: ' || PKG_RELATORIOS.FUNC_VALIDA_PESO_PORTE('GRANDE', 30));
 END;
 /
 
--- Teste 5: disparar a trigger (que agora delega para PKG_AUDITORIA) e conferir
+-- Teste 5: trigger (delegando para PKG_AUDITORIA) em UPDATE
 BEGIN
     UPDATE T_CLY_PET SET PESO = PESO + 1 WHERE ID_PET = 1;
     COMMIT;
 END;
 /
 
+-- Teste 6: trigger em INSERT (pet criado pelo proprio pacote de carga)
+BEGIN
+    PKG_CARGA.PRC_CARGA_PET(1, 'Pet Auditoria Pacote', 1, 1, 2, SYSDATE, 15, 'M', 'N');
+    COMMIT;
+END;
+/
+
+-- Teste 7: trigger em DELETE (:OLD preenchido, :NEW nulo)
+BEGIN
+    DELETE FROM T_CLY_PET WHERE NOME = 'Pet Auditoria Pacote';
+    COMMIT;
+END;
+/
+
+-- Conferindo a auditoria: devem aparecer UPDATE, INSERT e DELETE
+SELECT ID_AUDITORIA, NOME_USUARIO, TIPO_OPERACAO, DATA_OPERACAO, ID_PET_REF,
+       VALORES_ANTERIORES, VALORES_NOVOS
+FROM T_CLY_AUDITORIA_PET
+ORDER BY ID_AUDITORIA DESC
+FETCH FIRST 5 ROWS ONLY;
+
 SELECT ID_AUDITORIA, NOME_USUARIO, TIPO_OPERACAO, DATA_OPERACAO, ID_PET_REF
 FROM T_CLY_AUDITORIA_PET
 ORDER BY ID_AUDITORIA DESC
 FETCH FIRST 5 ROWS ONLY;
+
+
